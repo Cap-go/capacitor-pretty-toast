@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    />
+    <title>Pretty Toast Demo</title>
+    <script type="module" src="./main.js"></script>
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="hero">
+        <div class="hero-stage">
+          <div class="stage-glow stage-glow-cyan"></div>
+          <div class="stage-glow stage-glow-pink"></div>
+          <div class="stage-band"></div>
+          <div class="stage-copy">
+            <span>Capture Stage</span>
+            <strong>Use this fold to verify the notch-to-pill morph.</strong>
+            <p>The top area stays visually clean so entrance and collapse reads clearly in recordings.</p>
+          </div>
+          <div class="stage-actions">
+            <button id="show-promo">Play promo morph</button>
+            <button id="show-stage-update">Play update morph</button>
+          </div>
+        </div>
+        <div class="hero-copy">
+          <p class="eyebrow">Capgo Capacitor Pretty Toast</p>
+          <h1>Native island-style toasts with the RN-shaped API.</h1>
+          <p class="lede">
+            This demo exercises queueing, force interrupts, live updates,
+            promise flows, raw SVG icons, remote images, and data-URL icons from
+            one page.
+          </p>
+          <div class="hero-meta">
+            <div class="metric">
+              <span>API</span>
+              <strong>`toast.*`</strong>
+            </div>
+            <div class="metric">
+              <span>Targets</span>
+              <strong>iOS, Android, Web</strong>
+            </div>
+            <div class="metric">
+              <span>Modes</span>
+              <strong>Symbol, SVG, URI</strong>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <main class="grid">
+        <section class="panel controls-panel">
+          <div class="panel-head">
+            <h2>Shared Controls</h2>
+            <p>These values are applied to most demo toasts.</p>
+          </div>
+          <div class="controls-grid">
+            <label>
+              <span>Duration (ms)</span>
+              <input id="duration" type="number" min="0" step="100" value="2800" />
+            </label>
+            <label class="toggle">
+              <input id="auto-dismiss" type="checkbox" checked />
+              <span>Auto dismiss</span>
+            </label>
+            <label class="toggle">
+              <input id="swipe-dismiss" type="checkbox" checked />
+              <span>Swipe to dismiss</span>
+            </label>
+            <label class="toggle">
+              <input id="disable-backdrop" type="checkbox" />
+              <span>Disable backdrop sampling</span>
+            </label>
+            <label class="toggle">
+              <input id="enable-action" type="checkbox" checked />
+              <span>Attach “Undo” action</span>
+            </label>
+            <label class="toggle">
+              <input id="enable-press" type="checkbox" checked />
+              <span>Attach tap handler</span>
+            </label>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <h2>Variants</h2>
+            <p>Shorthand calls using the same defaults as the React Native package.</p>
+          </div>
+          <div class="button-grid">
+            <button id="show-success">Success</button>
+            <button id="show-error">Error</button>
+            <button id="show-info">Info</button>
+            <button id="show-warning">Warning</button>
+            <button id="show-loading">Loading then update</button>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <h2>Queue and Force</h2>
+            <p>Normal queueing, then an interrupt using `force: true`.</p>
+          </div>
+          <div class="button-grid">
+            <button id="queue-demo">Queue three toasts</button>
+            <button id="force-demo">Force interrupt</button>
+            <button id="update-current">Update current toast</button>
+            <button id="dismiss-current">Dismiss current</button>
+            <button id="dismiss-all">Dismiss all</button>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <h2>Promise Flow</h2>
+            <p>`toast.promise()` morphs a loading toast into success or error.</p>
+          </div>
+          <div class="button-grid">
+            <button id="promise-success">Promise success</button>
+            <button id="promise-error">Promise error</button>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <h2>Icon Modes</h2>
+            <p>`icon` supports symbol strings and raw SVG. `iconSource` stays URI-only.</p>
+          </div>
+          <div class="button-grid">
+            <button id="icon-symbol">Symbol icon</button>
+            <button id="icon-svg">Raw SVG icon</button>
+            <button id="icon-remote">Remote image iconSource</button>
+            <button id="icon-data">Data URL iconSource</button>
+          </div>
+        </section>
+
+        <section class="panel log-panel">
+          <div class="panel-head">
+            <h2>Event Log</h2>
+            <p>Press, action, queue, and promise activity is echoed here.</p>
+          </div>
+          <ol id="log"></ol>
+        </section>
+      </main>
+    </div>
+  </body>
+</html>

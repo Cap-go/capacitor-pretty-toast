@@ -1,0 +1,10 @@
+{
+  "appId": "app.capgo.pretty.toast",
+  "appName": "Pretty Toast Demo",
+  "webDir": "dist",
+  "plugins": {
+    "SplashScreen": {
+      "launchAutoHide": false
+    }
+  }
+}

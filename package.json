@@ -1,0 +1,93 @@
+{
+  "name": "@capgo/capacitor-pretty-toast",
+  "version": "8.0.0",
+  "description": "Native-first pretty toast notifications for Capacitor and the web",
+  "main": "dist/plugin.cjs.js",
+  "module": "dist/esm/index.js",
+  "types": "dist/esm/index.d.ts",
+  "unpkg": "dist/plugin.js",
+  "files": [
+    "android/src/main/",
+    "android/src/test/",
+    "android/build.gradle",
+    "dist/",
+    "ios/Sources",
+    "ios/Tests",
+    "scripts/",
+    "Package.swift",
+    "CapgoCapacitorPrettyToast.podspec"
+  ],
+  "author": "Martin Donadieu <martin@capgo.app>",
+  "license": "MPL-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Cap-go/capacitor-pretty-toast.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Cap-go/capacitor-pretty-toast/issues"
+  },
+  "homepage": "https://capgo.app/docs/plugins/pretty-toast/",
+  "keywords": [
+    "capacitor",
+    "plugin",
+    "toast",
+    "notifications",
+    "dynamic-island",
+    "web"
+  ],
+  "scripts": {
+    "verify": "bun run verify:web && bun run verify:ios && bun run verify:android",
+    "verify:ios": "xcodebuild -scheme CapgoCapacitorPrettyToast -destination generic/platform=iOS",
+    "verify:android": "cd android && ./gradlew clean build test && cd ..",
+    "verify:web": "bun run build && bun test",
+    "test": "bun test && bun run test:ios && bun run test:android",
+    "test:ios": "./scripts/test-ios.sh",
+    "test:android": "cd android && ./gradlew test && cd ..",
+    "lint": "bun run eslint && bun run prettier -- --check && bun run swiftlint -- lint",
+    "fmt": "bun run eslint -- --fix && bun run prettier -- --write && bun run swiftlint -- --fix --format",
+    "eslint": "eslint . --ext ts",
+    "prettier": "prettier-pretty-check \"**/*.{css,html,ts,js,java,json,md}\" --plugin=prettier-plugin-java",
+    "swiftlint": "node-swiftlint",
+    "build": "bun run clean && tsc && rollup -c rollup.config.mjs",
+    "clean": "rimraf ./dist",
+    "watch": "tsc --watch",
+    "prepublishOnly": "bun run build",
+    "check:wiring": "node scripts/check-capacitor-plugin-wiring.mjs",
+    "example:install": "cd example-app && bun install",
+    "example:build": "cd example-app && bun run build"
+  },
+  "devDependencies": {
+    "@capacitor/android": "^8.0.0",
+    "@capacitor/core": "^8.0.0",
+    "@capacitor/ios": "^8.0.0",
+    "@ionic/eslint-config": "^0.4.0",
+    "@ionic/prettier-config": "^4.0.0",
+    "@ionic/swiftlint-config": "^2.0.0",
+    "@types/node": "^24.10.1",
+    "eslint": "^8.57.1",
+    "eslint-plugin-import": "^2.31.0",
+    "prettier": "^3.6.2",
+    "prettier-plugin-java": "^2.7.7",
+    "prettier-pretty-check": "^0.2.0",
+    "rimraf": "^6.1.0",
+    "rollup": "^4.53.2",
+    "swiftlint": "^2.0.0",
+    "typescript": "^5.9.3"
+  },
+  "peerDependencies": {
+    "@capacitor/core": ">=8.0.0"
+  },
+  "prettier": "@ionic/prettier-config",
+  "swiftlint": "@ionic/swiftlint-config",
+  "eslintConfig": {
+    "extends": "@ionic/eslint-config/recommended"
+  },
+  "capacitor": {
+    "ios": {
+      "src": "ios"
+    },
+    "android": {
+      "src": "android"
+    }
+  }
+}
