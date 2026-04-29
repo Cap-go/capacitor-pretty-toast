@@ -2,7 +2,7 @@
 
 Native-first pretty toast notifications for Capacitor and the web.
 
-[Promo video](./media/pretty-toast-demo.mp4)
+capacitor-pretty-toast.mov
 
 ![Pretty Toast Hero](./media/pretty-toast-hero.png)
 
