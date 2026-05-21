@@ -1,7 +1,7 @@
 {
-  "name": "capacitor-app",
+  "name": "pretty-toast-example",
   "version": "1.0.0",
-  "description": "An Amazing Capacitor App",
+  "description": "Example Capacitor app for @capgo/capacitor-pretty-toast",
   "type": "module",
   "keywords": [
     "capacitor",
@@ -10,13 +10,15 @@
   "scripts": {
     "start": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "capgo:deploy": "cd .. && bun run example:capgo:deploy"
   },
   "dependencies": {
+    "@capacitor/android": "^8.0.0",
     "@capacitor/core": "^8.0.0",
-    "@capgo/capacitor-pretty-toast": "file:..",
     "@capacitor/ios": "^8.0.0",
-    "@capacitor/android": "^8.0.0"
+    "@capgo/capacitor-pretty-toast": "file:..",
+    "@capgo/capacitor-updater": "^8.45.11"
   },
   "devDependencies": {
     "@capacitor/cli": "^8.0.0",
