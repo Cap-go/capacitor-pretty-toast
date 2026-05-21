@@ -5,6 +5,14 @@
   "plugins": {
     "SplashScreen": {
       "launchAutoHide": false
+    },
+    "CapacitorUpdater": {
+      "appId": "app.capgo.pretty.toast",
+      "autoUpdate": true,
+      "autoSplashscreen": true,
+      "directUpdate": "always",
+      "defaultChannel": "production",
+      "version": "8.0.0"
     }
   }
 }
