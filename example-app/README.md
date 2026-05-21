@@ -1,4 +1,4 @@
-## Pretty Toast Demo App
+# Pretty Toast Example App
 
 This app exercises the local `@capgo/capacitor-pretty-toast` package through the public `toast.*` API.
 
