@@ -8,8 +8,8 @@ capacitor-pretty-toast.mov
 
 This package keeps the familiar `toast.*` surface from `react-native-pretty-toast`, but ships as a Capacitor plugin with:
 
-- native overlays on iOS and Android
-- a DOM renderer on web
+- native overlays on iOS and Android.
+- a DOM renderer on web.
 - queueing, `force`, `update`, `dismiss`, `dismissAll`, and `promise`
 - symbol icons, raw SVG through `icon`, and URI-based images through `iconSource`
 
