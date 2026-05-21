@@ -53,7 +53,7 @@ if (!process.env.CAPGO_TOKEN) {
 }
 
 const args = [
-  '@capgo/cli@7.108.3',
+  '@capgo/cli@7',
   'bundle',
   'upload',
   appId,

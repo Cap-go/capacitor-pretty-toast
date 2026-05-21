@@ -120,7 +120,7 @@ jobs:
       - name: Deploy to Capgo
         working-directory: example-app
         run: |
-          bunx @capgo/cli@7.108.3 bundle upload app.capgo.pretty.toast \
+          bunx @capgo/cli@7 bundle upload app.capgo.pretty.toast \
             --path dist \
             --channel "$UPLOAD_CHANNEL" \
             --bundle "$UPLOAD_BUNDLE" \
