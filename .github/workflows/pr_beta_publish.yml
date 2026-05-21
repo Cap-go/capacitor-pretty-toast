@@ -219,6 +219,8 @@ jobs:
     permissions:
       # Needed to upsert the beta publish status comment on pull requests.
       issues: write
+      # Needed to avoid overwriting the status comment after the PR head moves.
+      pull-requests: read
     steps:
       - name: Update PR beta publish comment
         uses: actions/github-script@v8
@@ -235,13 +237,24 @@ jobs:
           script: |
             const marker = '<!-- pr-beta-publish -->';
             const prNumber = Number(process.env.PR_NUMBER);
+            const headSha = process.env.HEAD_SHA || '';
+            const { data: currentPr } = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: prNumber,
+            });
+            if (headSha && currentPr.head.sha !== headSha) {
+              core.notice(`Skipping stale beta publish comment for ${headSha}; current PR head is ${currentPr.head.sha}.`);
+              return;
+            }
+
             const actor = process.env.ACTOR;
             const buildResult = process.env.BUILD_RESULT;
             const publishResult = process.env.PUBLISH_RESULT;
             const resolveResult = process.env.RESOLVE_RESULT;
             const packageName = process.env.PACKAGE_NAME;
             const version = process.env.VERSION;
-            const shortSha = process.env.HEAD_SHA ? process.env.HEAD_SHA.slice(0, 7) : '';
+            const shortSha = headSha ? headSha.slice(0, 7) : '';
             const published = buildResult === 'success' && publishResult === 'success';
             const body = published ? [
               marker,
