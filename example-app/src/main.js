@@ -45,7 +45,10 @@ let loadingToastId = null;
 
 bindEvents();
 log('Demo ready');
-void CapacitorUpdater.notifyAppReady().catch(() => undefined);
+void CapacitorUpdater.notifyAppReady().catch((error) => {
+  console.error('CapacitorUpdater.notifyAppReady failed', error);
+  log(`CapacitorUpdater.notifyAppReady failed: ${error instanceof Error ? error.message : String(error)}`);
+});
 runAutoplayDemo();
 
 function bindEvents() {
