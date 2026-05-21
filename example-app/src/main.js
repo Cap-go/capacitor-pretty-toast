@@ -1,6 +1,7 @@
 import './styles.css';
 
 import { toast } from '@capgo/capacitor-pretty-toast';
+import { CapacitorUpdater } from '@capgo/capacitor-updater';
 
 const pageParams = new URLSearchParams(window.location.search);
 const activeDemo = pageParams.get('demo');
@@ -44,6 +45,7 @@ let loadingToastId = null;
 
 bindEvents();
 log('Demo ready');
+void CapacitorUpdater.notifyAppReady().catch(() => undefined);
 runAutoplayDemo();
 
 function bindEvents() {
