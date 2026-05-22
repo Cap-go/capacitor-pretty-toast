@@ -98,6 +98,21 @@ describe('ToastController', () => {
     expect(driver.showCalls[0]?.iconSvg).toBe('');
   });
 
+  test('svg icon payload avoids variant fallback on native', () => {
+    const driver = new FakeDriver();
+    const controller = new ToastController(driver);
+
+    controller.ref.success('Done', {
+      icon: '<svg viewBox="0 0 1 1"/>',
+      autoDismiss: false,
+    });
+
+    expect(driver.showCalls).toHaveLength(1);
+    expect(driver.showCalls[0]?.icon).toContain('checkmark');
+    expect(driver.showCalls[0]?.iconSvg).toContain('<svg');
+    expect(driver.showCalls[0]?.iconUri).toContain('data:image/png;base64,');
+  });
+
   test('auto dismiss callback fires when timer elapsed before dismiss event', async () => {
     const driver = new FakeDriver();
     const controller = new ToastController(driver);

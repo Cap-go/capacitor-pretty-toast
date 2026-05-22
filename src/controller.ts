@@ -34,6 +34,9 @@ const VARIANT_ICONS: Record<ToastVariant, string> = {
   loading: 'arrow.triangle.2.circlepath',
 };
 
+const TRANSPARENT_PNG_DATA_URL =
+  'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO6rOewAAAAASUVORK5CYII=';
+
 export class ToastController {
   private queue: ToastEntry[] = [];
   private current: ToastEntry | null = null;
@@ -274,12 +277,16 @@ export class ToastController {
   }
 
   private buildPayload(entry: ToastEntry): InternalToastPayload {
-    const iconUri = entry.iconSourceUri ?? entry.resolvedIconUri ?? '';
+    const iconSourceUri = entry.iconSourceUri;
+    const nativeIconUri =
+      iconSourceUri && isNativeSafeIconUri(iconSourceUri)
+        ? iconSourceUri
+        : (entry.resolvedIconUri ?? (entry.rawSvg || iconSourceUri ? TRANSPARENT_PNG_DATA_URL : ''));
     return {
       id: entry.id,
       icon: entry.iconSymbol,
-      iconUri,
-      webIconUri: entry.iconSourceUri ?? iconUri,
+      iconUri: nativeIconUri,
+      webIconUri: iconSourceUri ?? nativeIconUri,
       iconSvg: entry.iconSourceUri ? '' : (entry.rawSvg ?? ''),
       title: entry.title ?? '',
       message: entry.message ?? '',

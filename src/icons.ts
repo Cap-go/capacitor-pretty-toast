@@ -101,7 +101,16 @@ function rasterizeSvgToPngDataUrlInternal(svg: string): Promise<string | null> {
     return Promise.resolve(null);
   }
 
-  const encodedSvg = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+  const normalizedSvg = svg.includes('xmlns=') ? svg : svg.replace('<svg', '<svg xmlns="http://www.w3.org/2000/svg"');
+
+  const encodedSvg = (() => {
+    try {
+      const base64 = btoa(unescape(encodeURIComponent(normalizedSvg)));
+      return `data:image/svg+xml;base64,${base64}`;
+    } catch {
+      return `data:image/svg+xml,${encodeURIComponent(normalizedSvg)}`;
+    }
+  })();
 
   return new Promise((resolve) => {
     const image = new Image();

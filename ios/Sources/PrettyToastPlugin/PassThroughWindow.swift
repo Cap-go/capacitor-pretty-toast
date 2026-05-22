@@ -10,8 +10,10 @@ class PassThroughWindow: UIWindow, ObservableObject {
     @Published var toast: Toast?
     @Published var isPresented: Bool = false
     @Published var useDynamicIsland: Bool = true
+    @Published var enableSwipeDismiss: Bool = true
     @Published var wasTapped: Bool = false
     @Published var actionTapped: Bool = false
+    @Published var toastHitFrame: CGRect = .zero
 
     @Published var backdropTint: BackdropTint = .gray
 
@@ -21,23 +23,16 @@ class PassThroughWindow: UIWindow, ObservableObject {
     private var pendingTint: BackdropTint?
     private var pendingTintSince: CFAbsoluteTime = 0
 
-    override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
-        guard let hitView = super.hitTest(point, with: event),
-              let rootView = rootViewController?.view else {
-            return nil
+    override func point(inside point: CGPoint, with event: UIEvent?) -> Bool {
+        guard toast != nil, isPresented else { return false }
+
+        let frame = toastHitFrame
+        if frame.isEmpty {
+            return false
         }
 
-        if hitView == rootView {
-            for subview in rootView.subviews.reversed() {
-                let pointInSubView = subview.convert(point, from: rootView)
-                if let nestedHit = subview.hitTest(pointInSubView, with: event) {
-                    return nestedHit
-                }
-            }
-            return nil
-        }
-
-        return hitView
+        // Expand slightly so edge drags still latch the pill.
+        return frame.insetBy(dx: -8, dy: -8).contains(point)
     }
 
     // MARK: - Backdrop sampling
