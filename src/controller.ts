@@ -37,6 +37,17 @@ const VARIANT_ICONS: Record<ToastVariant, string> = {
 const TRANSPARENT_PNG_DATA_URL =
   'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO6rOewAAAAASUVORK5CYII=';
 
+function resolveNativeIconUri(entry: ToastEntry): string {
+  const iconSourceUri = entry.iconSourceUri;
+  if (iconSourceUri && isNativeSafeIconUri(iconSourceUri)) {
+    return iconSourceUri;
+  }
+  if (entry.resolvedIconUri !== undefined) {
+    return entry.resolvedIconUri;
+  }
+  return entry.rawSvg || iconSourceUri ? TRANSPARENT_PNG_DATA_URL : '';
+}
+
 export class ToastController {
   private queue: ToastEntry[] = [];
   private current: ToastEntry | null = null;
@@ -277,16 +288,12 @@ export class ToastController {
   }
 
   private buildPayload(entry: ToastEntry): InternalToastPayload {
-    const iconSourceUri = entry.iconSourceUri;
-    const nativeIconUri =
-      iconSourceUri && isNativeSafeIconUri(iconSourceUri)
-        ? iconSourceUri
-        : (entry.resolvedIconUri ?? (entry.rawSvg || iconSourceUri ? TRANSPARENT_PNG_DATA_URL : ''));
+    const nativeIconUri = resolveNativeIconUri(entry);
     return {
       id: entry.id,
       icon: entry.iconSymbol,
       iconUri: nativeIconUri,
-      webIconUri: iconSourceUri ?? nativeIconUri,
+      webIconUri: entry.iconSourceUri ?? nativeIconUri,
       iconSvg: entry.iconSourceUri ? '' : (entry.rawSvg ?? ''),
       title: entry.title ?? '',
       message: entry.message ?? '',

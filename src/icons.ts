@@ -105,7 +105,9 @@ function rasterizeSvgToPngDataUrlInternal(svg: string): Promise<string | null> {
 
   const encodedSvg = (() => {
     try {
-      const base64 = btoa(unescape(encodeURIComponent(normalizedSvg)));
+      const bytes = new TextEncoder().encode(normalizedSvg);
+      const binaryString = Array.from(bytes, (byte) => String.fromCharCode(byte)).join('');
+      const base64 = btoa(binaryString);
       return `data:image/svg+xml;base64,${base64}`;
     } catch {
       return `data:image/svg+xml,${encodeURIComponent(normalizedSvg)}`;
