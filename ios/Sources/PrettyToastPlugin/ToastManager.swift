@@ -63,6 +63,7 @@ import UIKit
 
         overlayWindow.toast = toast
         overlayWindow.useDynamicIsland = useDynamicIsland
+        overlayWindow.enableSwipeDismiss = enableSwipeDismiss
         overlayWindow.wasTapped = false
         overlayWindow.actionTapped = false
         isDismissing = false

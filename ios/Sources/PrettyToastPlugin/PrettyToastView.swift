@@ -26,39 +26,60 @@ struct PrettyToastView: View {
             let scaleX: CGFloat = isExpanded ? 1 : (dynamicIslandWidth / expandedWidth)
             let scaleY: CGFloat = isExpanded ? 1 : (dynamicIslandHeight / expandedHeight)
 
+            let swipeGesture = DragGesture(minimumDistance: 2).onEnded { value in
+                if value.translation.height < -8 || value.predictedEndTranslation.height < -40 {
+                    window.isPresented = false
+                }
+            }
+
             ZStack {
-                toastBackground()
-                    .overlay {
-                        toastContent(haveDynamicIsland, expandedWidth: expandedWidth)
-                            .frame(width: expandedWidth, height: expandedHeight)
-                            .scaleEffect(x: scaleX, y: scaleY)
-                    }
-                    .frame(
-                        width: isExpanded ? expandedWidth : dynamicIslandWidth,
-                        height: isExpanded ? expandedHeight : dynamicIslandHeight
-                    )
-                    .opacity(haveDynamicIsland ? 1 : (isExpanded ? 1 : 0))
-                    .modifier(CapsuleOpacityModifier(
-                        haveDynamicIsland: haveDynamicIsland,
-                        isExpanded: isExpanded
-                    ))
-                    .modifier(GeometryGroupModifier())
-                    .contentShape(Rectangle())
-                    .onTapGesture {
-                        window.wasTapped = true
-                    }
-                    .gesture(
-                        DragGesture(minimumDistance: 2).onEnded { value in
-                            if value.translation.height < -8 || value.predictedEndTranslation.height < -40 {
-                                window.isPresented = false
+                Group {
+                    let pill = toastBackground()
+                        .overlay {
+                            toastContent(haveDynamicIsland, expandedWidth: expandedWidth)
+                                .frame(width: expandedWidth, height: expandedHeight)
+                                .scaleEffect(x: scaleX, y: scaleY)
+                        }
+                        .frame(
+                            width: isExpanded ? expandedWidth : dynamicIslandWidth,
+                            height: isExpanded ? expandedHeight : dynamicIslandHeight
+                        )
+                        .opacity(haveDynamicIsland ? 1 : (isExpanded ? 1 : 0))
+                        .modifier(CapsuleOpacityModifier(
+                            haveDynamicIsland: haveDynamicIsland,
+                            isExpanded: isExpanded
+                        ))
+                        .modifier(GeometryGroupModifier())
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            window.wasTapped = true
+                        }
+                        .background(
+                            GeometryReader { geo in
+                                Color.clear.preference(
+                                    key: ToastFrameKey.self,
+                                    value: geo.frame(in: .named("overlayWindow"))
+                                )
+                            }
+                        )
+                        .onPreferenceChange(ToastFrameKey.self) { frame in
+                            if window.toastHitFrame != frame {
+                                window.toastHitFrame = frame
                             }
                         }
-                    )
-                    .offset(y: haveDynamicIsland ? (isExpanded ? expandedTopOffset : topOffset) : 0)
+
+                    if window.enableSwipeDismiss {
+                        pill.gesture(swipeGesture)
+                    } else {
+                        pill
+                    }
+                }
+                .offset(y: haveDynamicIsland ? (isExpanded ? expandedTopOffset : topOffset) : 0)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             .padding(.top, haveDynamicIsland ? 0 : (isExpanded ? max(safeArea.top, 10) : 0))
             .ignoresSafeArea()
+            .coordinateSpace(name: "overlayWindow")
             .animation(.bouncy(duration: 0.3, extraBounce: 0), value: isExpanded)
         }
     }
@@ -223,6 +244,13 @@ private struct ContentHeightKey: PreferenceKey {
     static var defaultValue: CGFloat = 0
     static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
         value = max(value, nextValue())
+    }
+}
+
+private struct ToastFrameKey: PreferenceKey {
+    static var defaultValue: CGRect = .zero
+    static func reduce(value: inout CGRect, nextValue: () -> CGRect) {
+        value = nextValue()
     }
 }
 
