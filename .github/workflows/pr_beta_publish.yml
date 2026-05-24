@@ -17,23 +17,19 @@ concurrency:
 
 permissions:
   contents: read
+  id-token: write
+  issues: write
+  pull-requests: write
 
 jobs:
-  resolve:
-    if: ${{ github.event_name == 'workflow_dispatch' || (github.event.issue.pull_request && github.event.comment.user.type != 'Bot' && github.event.comment.body == '/publish-beta') }}
+  publish:
+    if: ${{ github.event_name == 'workflow_dispatch' || (github.event.issue.pull_request && contains(github.event.comment.body, '/publish-beta')) }}
     runs-on: ubuntu-latest
-    timeout-minutes: 10
-    permissions:
-      contents: read
-      pull-requests: read
-    outputs:
-      actor: ${{ steps.pr.outputs.actor }}
-      head_sha: ${{ steps.pr.outputs.head_sha }}
-      pr_number: ${{ steps.pr.outputs.pr_number }}
+    timeout-minutes: 30
     steps:
       - name: Resolve PR and access checks
         id: pr
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9.0.0
         with:
           script: |
             const prNumber = context.eventName === 'workflow_dispatch'
@@ -65,6 +61,7 @@ jobs:
             }
 
             if (context.eventName === 'issue_comment') {
+              const actor = context.payload.comment.user.login;
               const { data: permission } = await github.rest.repos.getCollaboratorPermissionLevel({
                 owner,
                 repo,
@@ -107,30 +104,67 @@ jobs:
               core.setFailed(`PR checks are not green yet (current state: ${rollupState}).`);
               return;
             }
-
             core.setOutput('head_sha', pr.head.sha);
 
-  build-pr-head:
-    needs: resolve
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    permissions:
-      contents: read
-    outputs:
-      package_name: ${{ steps.version.outputs.package_name }}
-      version: ${{ steps.version.outputs.version }}
-    steps:
-      - name: Check out PR head
-        uses: actions/checkout@v6
+      - name: Mark publish as running
+        uses: actions/github-script@v9.0.0
         with:
-          ref: ${{ needs.resolve.outputs.head_sha }}
+          script: |
+            const marker = '<!-- pr-beta-publish -->';
+            const prNumber = Number('${{ steps.pr.outputs.pr_number }}');
+            const actor = '${{ steps.pr.outputs.actor }}';
+            const body = [
+              marker,
+              '',
+              '## Beta npm build',
+              '',
+              'Status: publishing',
+              '',
+              `Requested by @${actor}.`,
+              '',
+              `This run will publish the PR head to the \`beta\` npm tag and refresh \`pr-${prNumber}\`.`,
+              '',
+              `Run: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+            ].join('\n');
+
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prNumber,
+              per_page: 100,
+            });
+
+            const existing = comments.find((comment) => comment.user.type === 'Bot' && comment.body.includes(marker));
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+              return;
+            }
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prNumber,
+              body,
+            });
+
+      - name: Check out PR head
+        uses: actions/checkout@v6.0.2
+        with:
+          ref: ${{ steps.pr.outputs.head_sha }}
           fetch-depth: 0
           filter: blob:none
+          persist-credentials: false
 
-      - uses: oven-sh/setup-bun@v2
+      - uses: oven-sh/setup-bun@v2.2.0
 
       - name: Install dependencies
-        run: bun ci
+        run: bun i
 
       - name: Check plugin wiring
         run: bun run check:wiring
@@ -138,7 +172,7 @@ jobs:
       - name: Set beta package version
         id: version
         env:
-          PR_NUMBER: ${{ needs.resolve.outputs.pr_number }}
+          PR_NUMBER: ${{ steps.pr.outputs.pr_number }}
         run: |
           node <<'NODE' >> "$GITHUB_OUTPUT"
           const fs = require('fs');
@@ -160,37 +194,8 @@ jobs:
       - name: Build
         run: bun run build
 
-      - name: Pack npm package
-        run: |
-          mkdir -p package
-          bun pm pack --destination package --quiet
-
-      - name: Upload package artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: npm-package
-          path: package/*.tgz
-          if-no-files-found: error
-          retention-days: 1
-
-  publish:
-    needs:
-      - resolve
-      - build-pr-head
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    permissions:
-      contents: read
-      id-token: write
-    steps:
-      - name: Download package artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: npm-package
-          path: package
-
       - name: Setup Node.js for npm publish
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v6.4.0
         with:
           node-version: 24.x
           registry-url: 'https://registry.npmjs.org'
@@ -198,65 +203,25 @@ jobs:
       - name: Publish to npm beta
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: npm publish package/*.tgz --tag beta --provenance --access public --ignore-scripts
+        run: npm publish --tag beta --provenance --access public --ignore-scripts
 
       - name: Add PR dist-tag
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-          PACKAGE_NAME: ${{ needs.build-pr-head.outputs.package_name }}
-          PR_NUMBER: ${{ needs.resolve.outputs.pr_number }}
-          VERSION: ${{ needs.build-pr-head.outputs.version }}
-        run: npm dist-tag add "$PACKAGE_NAME@$VERSION" "pr-$PR_NUMBER"
+        run: npm dist-tag add "${{ steps.version.outputs.package_name }}@${{ steps.version.outputs.version }}" "pr-${{ steps.pr.outputs.pr_number }}"
 
-  notify:
-    needs:
-      - resolve
-      - build-pr-head
-      - publish
-    if: ${{ always() && needs.resolve.outputs.pr_number != '' }}
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    permissions:
-      # Needed to upsert the beta publish status comment on pull requests.
-      issues: write
-      # Needed to read the current PR head and upsert PR issue comments.
-      pull-requests: write
-    steps:
-      - name: Update PR beta publish comment
-        uses: actions/github-script@v8
-        env:
-          ACTOR: ${{ needs.resolve.outputs.actor }}
-          BUILD_RESULT: ${{ needs.build-pr-head.result }}
-          HEAD_SHA: ${{ needs.resolve.outputs.head_sha }}
-          PACKAGE_NAME: ${{ needs.build-pr-head.outputs.package_name }}
-          PUBLISH_RESULT: ${{ needs.publish.result }}
-          PR_NUMBER: ${{ needs.resolve.outputs.pr_number }}
-          RESOLVE_RESULT: ${{ needs.resolve.result }}
-          VERSION: ${{ needs.build-pr-head.outputs.version }}
+      - name: Publish success comment
+        if: ${{ success() }}
+        uses: actions/github-script@v9.0.0
         with:
           script: |
             const marker = '<!-- pr-beta-publish -->';
-            const prNumber = Number(process.env.PR_NUMBER);
-            const headSha = process.env.HEAD_SHA || '';
-            const { data: currentPr } = await github.rest.pulls.get({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              pull_number: prNumber,
-            });
-            if (headSha && currentPr.head.sha !== headSha) {
-              core.notice(`Skipping stale beta publish comment for ${headSha}; current PR head is ${currentPr.head.sha}.`);
-              return;
-            }
-
-            const actor = process.env.ACTOR;
-            const buildResult = process.env.BUILD_RESULT;
-            const publishResult = process.env.PUBLISH_RESULT;
-            const resolveResult = process.env.RESOLVE_RESULT;
-            const packageName = process.env.PACKAGE_NAME;
-            const version = process.env.VERSION;
-            const shortSha = headSha ? headSha.slice(0, 7) : '';
-            const published = buildResult === 'success' && publishResult === 'success';
-            const body = published ? [
+            const prNumber = Number('${{ steps.pr.outputs.pr_number }}');
+            const actor = '${{ steps.pr.outputs.actor }}';
+            const packageName = '${{ steps.version.outputs.package_name }}';
+            const version = '${{ steps.version.outputs.version }}';
+            const shortSha = '${{ steps.pr.outputs.head_sha }}'.slice(0, 7);
+            const body = [
               marker,
               '',
               '## Beta npm build',
@@ -278,52 +243,74 @@ jobs:
               '```',
               '',
               `Run: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
-            ].join('\n') : [
+            ].join('\n');
+
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prNumber,
+              per_page: 100,
+            });
+
+            const existing = comments.find((comment) => comment.user.type === 'Bot' && comment.body.includes(marker));
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+              return;
+            }
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prNumber,
+              body,
+            });
+
+      - name: Publish failure comment
+        if: ${{ failure() && steps.pr.outputs.pr_number != '' }}
+        uses: actions/github-script@v9.0.0
+        with:
+          script: |
+            const marker = '<!-- pr-beta-publish -->';
+            const prNumber = Number('${{ steps.pr.outputs.pr_number }}');
+            const body = [
               marker,
               '',
               '## Beta npm build',
               '',
               'Status: failed',
               '',
-              `Resolve: ${resolveResult}`,
-              `Build: ${buildResult}`,
-              `Publish: ${publishResult}`,
-              '',
               'Open the run for details:',
               `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
             ].join('\n');
 
-            try {
-              const comments = await github.paginate(github.rest.issues.listComments, {
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prNumber,
+              per_page: 100,
+            });
+
+            const existing = comments.find((comment) => comment.user.type === 'Bot' && comment.body.includes(marker));
+
+            if (existing) {
+              await github.rest.issues.updateComment({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                issue_number: prNumber,
-                per_page: 100,
-              });
-
-              const existing = comments.find((comment) => comment.user.type === 'Bot' && comment.body.includes(marker));
-
-              if (existing) {
-                await github.rest.issues.updateComment({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  comment_id: existing.id,
-                  body,
-                });
-                return;
-              }
-
-              await github.rest.issues.createComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: prNumber,
+                comment_id: existing.id,
                 body,
               });
-            } catch (error) {
-              if (error.status === 403 || error.status === 404) {
-                core.warning(`Unable to upsert beta publish comment: ${error.message}`);
-                return;
-              }
-
-              throw error;
+              return;
             }
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prNumber,
+              body,
+            });
