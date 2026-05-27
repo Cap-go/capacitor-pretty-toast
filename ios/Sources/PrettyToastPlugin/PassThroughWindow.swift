@@ -11,6 +11,7 @@ class PassThroughWindow: UIWindow, ObservableObject {
     @Published var isPresented: Bool = false
     @Published var useDynamicIsland: Bool = true
     @Published var enableSwipeDismiss: Bool = true
+    @Published var swipeDismissRequested: Bool = false
     @Published var wasTapped: Bool = false
     @Published var actionTapped: Bool = false
     @Published var toastHitFrame: CGRect = .zero
