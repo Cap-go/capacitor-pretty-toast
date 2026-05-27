@@ -10,6 +10,7 @@ import UIKit
     private var hostingController: CustomHostingView?
     private var autoDismissTimer: Timer?
     private var dismissCancellable: AnyCancellable?
+    private var swipeDismissCancellable: AnyCancellable?
     private var tapCancellable: AnyCancellable?
     private var actionCancellable: AnyCancellable?
     // Guards against double-firing onDismiss when a programmatic dismiss
@@ -200,6 +201,7 @@ import UIKit
         }
 
         observeDismiss()
+        observeSwipeDismiss()
         observeTap()
         observeAction()
     }
@@ -221,6 +223,19 @@ import UIKit
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) { [weak self] in
                     self?.onDismiss?()
                 }
+            }
+    }
+
+    private func observeSwipeDismiss() {
+        guard let overlayWindow else { return }
+
+        swipeDismissCancellable = overlayWindow.$swipeDismissRequested
+            .dropFirst()
+            .filter { $0 }
+            .sink { [weak self] _ in
+                guard let self else { return }
+                self.overlayWindow?.swipeDismissRequested = false
+                self.dismiss()
             }
     }
 
@@ -352,6 +367,7 @@ import UIKit
         // main, so hop over before breaking the retain cycle.
         let window = overlayWindow
         let dismissCancel = dismissCancellable
+        let swipeDismissCancel = swipeDismissCancellable
         let tapCancel = tapCancellable
         let actionCancel = actionCancellable
         let timer = autoDismissTimer
@@ -361,6 +377,7 @@ import UIKit
             timer?.invalidate()
             workItem?.cancel()
             dismissCancel?.cancel()
+            swipeDismissCancel?.cancel()
             tapCancel?.cancel()
             actionCancel?.cancel()
             loadTask?.cancel()
