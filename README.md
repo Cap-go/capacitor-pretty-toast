@@ -5,7 +5,7 @@ Native-first pretty toast notifications for Capacitor and the web.
 ## Demo
 
 <img
-  src="./media/pretty-toast-external-device.gif"
+  src="./media/pretty-toast-external-device.webp"
   alt="Animated Pretty Toast demo on an external device"
 />
 
