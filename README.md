@@ -5,8 +5,8 @@ Native-first pretty toast notifications for Capacitor and the web.
 ## Demo
 
 <img
-  src="./media/pretty-toast-demo.webp"
-  alt="Animated Pretty Toast demo showing Android cutout and centered island-style toast flows side by side"
+  src="./media/pretty-toast-external-device.webp"
+  alt="Animated Pretty Toast demo on an external device"
 />
 
 This package keeps the familiar `toast.*` surface from `react-native-pretty-toast`, but ships as a Capacitor plugin with:
