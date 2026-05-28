@@ -1,5 +1,6 @@
 import './styles.css';
 
+import { Capacitor } from '@capacitor/core';
 import { toast } from '@capgo/capacitor-pretty-toast';
 import { CapacitorUpdater } from '@capgo/capacitor-updater';
 
@@ -45,10 +46,12 @@ let loadingToastId = null;
 
 bindEvents();
 log('Demo ready');
-void CapacitorUpdater.notifyAppReady().catch((error) => {
-  console.error('CapacitorUpdater.notifyAppReady failed', error);
-  log(`CapacitorUpdater.notifyAppReady failed: ${error instanceof Error ? error.message : String(error)}`);
-});
+if (Capacitor.isNativePlatform()) {
+  void CapacitorUpdater.notifyAppReady().catch((error) => {
+    console.error('CapacitorUpdater.notifyAppReady failed', error);
+    log(`CapacitorUpdater.notifyAppReady failed: ${error instanceof Error ? error.message : String(error)}`);
+  });
+}
 runAutoplayDemo();
 
 function bindEvents() {
