@@ -58,19 +58,6 @@ jobs:
         working-directory: example-app
         run: bun install --frozen-lockfile
 
-      - name: Sync example updater version
-        run: |
-          bun -e '
-            const fs = require("fs");
-            const packageVersion = require("./package.json").version;
-            const configPath = "./example-app/capacitor.config.json";
-            const config = JSON.parse(fs.readFileSync(configPath, "utf8"));
-            config.plugins ??= {};
-            config.plugins.CapacitorUpdater ??= {};
-            config.plugins.CapacitorUpdater.version = packageVersion;
-            fs.writeFileSync(configPath, `${JSON.stringify(config, null, 2)}\n`);
-          '
-
       - name: Build example app
         working-directory: example-app
         run: bun run build
@@ -86,32 +73,17 @@ jobs:
 
           channel="${INPUT_CHANNEL:-}"
           comment="${INPUT_COMMENT:-}"
-          package_version="$(bun -e "const pkg = require('./package.json'); console.log(pkg.version)")"
-          config_version="$(bun -e "const cfg = require('./example-app/capacitor.config.json'); console.log(cfg.plugins?.CapacitorUpdater?.version ?? '')")"
 
           if [[ -z "$channel" ]]; then
             channel="production"
           fi
 
-          if [[ -z "$package_version" ]]; then
-            echo "package.json is missing a version."
-            exit 1
-          fi
-
-          if [[ "$config_version" != "$package_version" ]]; then
-            echo "CapacitorUpdater.version ($config_version) must match package.json version ($package_version)."
-            exit 1
-          fi
-
-          bundle="$package_version"
-
           if [[ -z "$comment" ]]; then
-            comment="Pretty Toast example $package_version"
+            comment="Pretty Toast example ${GITHUB_RUN_NUMBER:-manual}"
           fi
 
           {
             echo "channel=$channel"
-            echo "bundle=$bundle"
             echo "comment<<__CAPGO_COMMENT__"
             echo "$comment"
             echo "__CAPGO_COMMENT__"
@@ -120,11 +92,10 @@ jobs:
       - name: Deploy to Capgo
         working-directory: example-app
         run: |
-          bunx @capgo/cli@7 bundle upload app.capgo.pretty.toast \
+          bunx @capgo/cli@latest bundle upload \
             --path dist \
             --channel "$UPLOAD_CHANNEL" \
-            --bundle "$UPLOAD_BUNDLE" \
-            --package-json ../package.json,package.json \
+            --package-json package.json,../package.json \
             --node-modules ../node_modules,node_modules \
             --delta \
             --no-key \
@@ -134,5 +105,4 @@ jobs:
         env:
           CAPGO_TOKEN: ${{ secrets.CAPGO_TOKEN }}
           UPLOAD_CHANNEL: ${{ steps.upload.outputs.channel }}
-          UPLOAD_BUNDLE: ${{ steps.upload.outputs.bundle }}
           UPLOAD_COMMENT: ${{ steps.upload.outputs.comment }}

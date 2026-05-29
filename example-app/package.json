@@ -1,6 +1,6 @@
 {
   "name": "pretty-toast-example",
-  "version": "1.0.0",
+  "version": "8.1.6",
   "description": "Example Capacitor app for @capgo/capacitor-pretty-toast",
   "type": "module",
   "keywords": [
@@ -22,6 +22,7 @@
   },
   "devDependencies": {
     "@capacitor/cli": "^8.0.0",
+    "typescript": "^5.9.3",
     "vite": "^7.3.1"
   },
   "author": "",
