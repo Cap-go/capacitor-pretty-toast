@@ -36,6 +36,24 @@ class PassThroughWindow: UIWindow, ObservableObject {
         return frame.insetBy(dx: -8, dy: -8).contains(point)
     }
 
+    func resolvedSafeAreaInsets(geometryInsets: EdgeInsets) -> UIEdgeInsets {
+        let geometrySafeArea = UIEdgeInsets(
+            top: geometryInsets.top,
+            left: geometryInsets.leading,
+            bottom: geometryInsets.bottom,
+            right: geometryInsets.trailing
+        )
+
+        guard let scene = windowScene else {
+            return mergedSafeAreaInsets(geometrySafeArea, safeAreaInsets)
+        }
+
+        return scene.windows
+            .filter { $0 !== self && !$0.isHidden }
+            .map(\.safeAreaInsets)
+            .reduce(mergedSafeAreaInsets(geometrySafeArea, safeAreaInsets), mergedSafeAreaInsets)
+    }
+
     // MARK: - Backdrop sampling
 
     func startBackdropSampling() {
@@ -136,4 +154,13 @@ class PassThroughWindow: UIWindow, ObservableObject {
             pendingTint = nil
         }
     }
+}
+
+private func mergedSafeAreaInsets(_ lhs: UIEdgeInsets, _ rhs: UIEdgeInsets) -> UIEdgeInsets {
+    UIEdgeInsets(
+        top: max(lhs.top, rhs.top),
+        left: max(lhs.left, rhs.left),
+        bottom: max(lhs.bottom, rhs.bottom),
+        right: max(lhs.right, rhs.right)
+    )
 }
