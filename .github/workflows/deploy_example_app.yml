@@ -5,6 +5,8 @@ concurrency:
   cancel-in-progress: true
 
 on:
+  release:
+    types: [published]
   workflow_dispatch:
     inputs:
       channel:
@@ -40,6 +42,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
         with:
+          ref: ${{ github.event.release.tag_name || github.ref }}
           fetch-depth: 0
           filter: blob:none
           persist-credentials: false
@@ -69,18 +72,24 @@ jobs:
         env:
           INPUT_CHANNEL: ${{ github.event.inputs.channel }}
           INPUT_COMMENT: ${{ github.event.inputs.comment }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
         run: |
           set -euo pipefail
 
           channel="${INPUT_CHANNEL:-}"
           comment="${INPUT_COMMENT:-}"
+          release_tag="${RELEASE_TAG:-}"
 
           if [[ -z "$channel" ]]; then
             channel="production"
           fi
 
           if [[ -z "$comment" ]]; then
-            comment="Pretty Toast example ${GITHUB_RUN_NUMBER:-manual}"
+            if [[ -n "$release_tag" ]]; then
+              comment="Pretty Toast example ${release_tag}"
+            else
+              comment="Pretty Toast example ${GITHUB_RUN_NUMBER:-manual}"
+            fi
           fi
 
           {
@@ -91,19 +100,8 @@ jobs:
           } >> "$GITHUB_OUTPUT"
 
       - name: Deploy to Capgo
-        working-directory: example-app
-        run: |
-          bunx @capgo/cli@latest bundle upload \
-            --path dist \
-            --channel "$UPLOAD_CHANNEL" \
-            --package-json package.json,../package.json \
-            --node-modules ../node_modules,node_modules \
-            --delta \
-            --no-key \
-            --ignore-checksum-check \
-            --version-exists-ok \
-            --comment "$UPLOAD_COMMENT"
+        run: bun scripts/deploy-example-capgo.mjs
         env:
           CAPGO_TOKEN: ${{ secrets.CAPGO_TOKEN }}
-          UPLOAD_CHANNEL: ${{ steps.upload.outputs.channel }}
-          UPLOAD_COMMENT: ${{ steps.upload.outputs.comment }}
+          CAPGO_CHANNEL: ${{ steps.upload.outputs.channel }}
+          CAPGO_COMMENT: ${{ steps.upload.outputs.comment }}
