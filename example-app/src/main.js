@@ -49,7 +49,9 @@ log('Demo ready');
 if (Capacitor.isNativePlatform()) {
   void CapacitorUpdater.notifyAppReady().catch((error) => {
     console.error('CapacitorUpdater.notifyAppReady failed', error);
-    log(`CapacitorUpdater.notifyAppReady failed: ${error instanceof Error ? error.message : String(error)}`);
+    log(
+      `CapacitorUpdater.notifyAppReady failed: ${error instanceof Error ? error.message : String(error)}`,
+    );
   });
 }
 runAutoplayDemo();
@@ -112,7 +114,10 @@ function bindEvents() {
   button('#queue-demo', () => {
     toast.info('Queued first', withSharedConfig({ message: 'Toast one is visible first.' }));
     toast.warning('Queued second', withSharedConfig({ message: 'Toast two waits behind it.' }));
-    toast.success('Queued third', withSharedConfig({ message: 'Toast three stays in the FIFO queue.' }));
+    toast.success(
+      'Queued third',
+      withSharedConfig({ message: 'Toast three stays in the FIFO queue.' }),
+    );
     log('queued three toasts');
   });
 
@@ -262,7 +267,8 @@ function playPromoMorphDemo(overrides = {}) {
   lastToastId = toast.show(
     withSharedConfig({
       title: overrides.title ?? 'Release published',
-      message: overrides.message ?? 'Anchored motion from the top cutout, then a clean fold back out.',
+      message:
+        overrides.message ?? 'Anchored motion from the top cutout, then a clean fold back out.',
       icon: overrides.icon ?? 'paperplane.circle.fill',
       accentColor: overrides.accentColor ?? '#8DE8FF',
       autoDismiss: overrides.autoDismiss ?? true,
@@ -360,9 +366,7 @@ function withSharedConfig(overrides = {}) {
         onPress: () => log('action pressed'),
       }
     : undefined;
-  const onPress = ui.enablePress.checked
-    ? () => log('toast tapped')
-    : undefined;
+  const onPress = ui.enablePress.checked ? () => log('toast tapped') : undefined;
 
   return {
     duration,
