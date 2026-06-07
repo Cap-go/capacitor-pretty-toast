@@ -8,16 +8,29 @@ const scriptDir = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(scriptDir, '..');
 const appDir = resolve(repoRoot, 'example-app');
 const distDir = resolve(appDir, 'dist');
-const packageJsonPath = resolve(appDir, 'package.json');
-const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf8'));
+const rootPackageJsonPath = resolve(repoRoot, 'package.json');
+const examplePackageJsonPath = resolve(appDir, 'package.json');
+const rootPackageJson = JSON.parse(readFileSync(rootPackageJsonPath, 'utf8'));
+const examplePackageJson = JSON.parse(readFileSync(examplePackageJsonPath, 'utf8'));
+
+const toTitleCase = (value) =>
+  value
+    .split('-')
+    .filter(Boolean)
+    .map((part) => `${part.charAt(0).toUpperCase()}${part.slice(1)}`)
+    .join(' ');
+
+const packageBaseName = rootPackageJson.name.split('/').pop() ?? examplePackageJson.name;
+const exampleName = `${toTitleCase(packageBaseName.replace(/^capacitor-/, ''))} example`;
 
 const appId = process.env.CAPGO_APP_ID;
 const channel = process.env.CAPGO_CHANNEL || process.argv[2] || 'production';
+const bundle = process.env.CAPGO_BUNDLE || rootPackageJson.version || examplePackageJson.version;
 const comment =
   process.env.CAPGO_COMMENT ||
   (process.env.GITHUB_RUN_NUMBER
-    ? `Pretty Toast example run ${process.env.GITHUB_RUN_NUMBER}`
-    : `Pretty Toast example ${packageJson.version}`);
+    ? `${exampleName} run ${process.env.GITHUB_RUN_NUMBER}`
+    : `${exampleName} ${bundle}`);
 
 if (!existsSync(distDir)) {
   console.error('Missing example-app/dist. Run bun run --cwd example-app build first.');
@@ -29,6 +42,8 @@ const args = [
   'bundle',
   'upload',
   ...(appId ? [appId] : []),
+  '--bundle',
+  bundle,
   '--path',
   'dist',
   '--channel',
@@ -45,7 +60,7 @@ const args = [
   comment,
 ];
 
-console.log(`Deploying ${appId ?? 'Pretty Toast example'} to Capgo channel "${channel}"`);
+console.log(`Deploying ${appId ?? exampleName} to Capgo channel "${channel}"`);
 
 const result = spawnSync('bunx', args, {
   cwd: appDir,
