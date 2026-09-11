@@ -20,7 +20,10 @@ buildscript {
 }
 
 apply plugin: 'com.android.library'
-apply plugin: 'org.jetbrains.kotlin.android'
+// AGP 9 provides Kotlin; older AGP versions still need the standalone plugin.
+if (project.extensions.findByName('kotlin') == null) {
+    apply plugin: 'org.jetbrains.kotlin.android'
+}
 
 android {
     namespace = "com.toast"
