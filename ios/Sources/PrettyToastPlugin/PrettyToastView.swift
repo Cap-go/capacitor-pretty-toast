@@ -17,55 +17,56 @@ struct PrettyToastView: View {
             let scaleX: CGFloat = isExpanded ? 1 : (layout.compactWidth / layout.expandedWidth)
             let scaleY: CGFloat = isExpanded ? 1 : (layout.compactHeight / layout.expandedHeight)
 
-            let swipeGesture = DragGesture(minimumDistance: 2).onEnded { value in
-                if value.translation.height < -8 || value.predictedEndTranslation.height < -40 {
+            // A separate `.onTapGesture` alongside a low-threshold
+            // `.gesture(DragGesture())` on the same view is a classic SwiftUI
+            // trap: `minimumDistance: 2` makes the drag start recognizing on
+            // almost any real touch, taps included, and once it does, it took
+            // exclusive priority over the sibling tap gesture — so a plain
+            // tap never reached `wasTapped` and the toast could never be
+            // dismissed by tapping it. One gesture, one decision on release,
+            // fixes that: a short release is always a tap regardless of
+            // whether swipe-dismiss is enabled.
+            let dismissGesture = DragGesture(minimumDistance: 0).onEnded { value in
+                if window.enableSwipeDismiss && (value.translation.height < -8 || value.predictedEndTranslation.height < -40) {
                     window.swipeDismissRequested = true
+                } else {
+                    window.wasTapped = true
                 }
             }
 
             ZStack {
-                Group {
-                    let pill = toastBackground()
-                        .overlay {
-                            toastContent(layout)
-                                .frame(width: layout.expandedWidth, height: layout.expandedHeight)
-                                .scaleEffect(x: scaleX, y: scaleY)
-                        }
-                        .frame(
-                            width: isExpanded ? layout.expandedWidth : layout.compactWidth,
-                            height: isExpanded ? layout.expandedHeight : layout.compactHeight
-                        )
-                        .opacity(layout.hasDynamicIsland ? 1 : (isExpanded ? 1 : 0))
-                        .modifier(CapsuleOpacityModifier(
-                            haveDynamicIsland: layout.hasDynamicIsland,
-                            isExpanded: isExpanded
-                        ))
-                        .modifier(GeometryGroupModifier())
-                        .contentShape(Rectangle())
-                        .onTapGesture {
-                            window.wasTapped = true
-                        }
-                        .background(
-                            GeometryReader { geo in
-                                Color.clear.preference(
-                                    key: ToastFrameKey.self,
-                                    value: geo.frame(in: .named("overlayWindow"))
-                                )
-                            }
-                        )
-                        .onPreferenceChange(ToastFrameKey.self) { frame in
-                            if window.toastHitFrame != frame {
-                                window.toastHitFrame = frame
-                            }
-                        }
-
-                    if window.enableSwipeDismiss {
-                        pill.gesture(swipeGesture)
-                    } else {
-                        pill
+                toastBackground()
+                    .overlay {
+                        toastContent(layout)
+                            .frame(width: layout.expandedWidth, height: layout.expandedHeight)
+                            .scaleEffect(x: scaleX, y: scaleY)
                     }
-                }
-                .offset(y: layout.hasDynamicIsland ? (isExpanded ? layout.expandedTopOffset : layout.topOffset) : 0)
+                    .frame(
+                        width: isExpanded ? layout.expandedWidth : layout.compactWidth,
+                        height: isExpanded ? layout.expandedHeight : layout.compactHeight
+                    )
+                    .opacity(layout.hasDynamicIsland ? 1 : (isExpanded ? 1 : 0))
+                    .modifier(CapsuleOpacityModifier(
+                        haveDynamicIsland: layout.hasDynamicIsland,
+                        isExpanded: isExpanded
+                    ))
+                    .modifier(GeometryGroupModifier())
+                    .contentShape(Rectangle())
+                    .gesture(dismissGesture)
+                    .background(
+                        GeometryReader { geo in
+                            Color.clear.preference(
+                                key: ToastFrameKey.self,
+                                value: geo.frame(in: .named("overlayWindow"))
+                            )
+                        }
+                    )
+                    .onPreferenceChange(ToastFrameKey.self) { frame in
+                        if window.toastHitFrame != frame {
+                            window.toastHitFrame = frame
+                        }
+                    }
+                    .offset(y: layout.hasDynamicIsland ? (isExpanded ? layout.expandedTopOffset : layout.topOffset) : 0)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             .padding(.top, layout.hasDynamicIsland ? 0 : (isExpanded ? max(safeArea.top, 10) : 0))
