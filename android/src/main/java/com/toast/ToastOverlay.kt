@@ -66,7 +66,13 @@ class ToastOverlay(activity: Activity) {
     var onPress: (() -> Unit)? = null
     var onActionPress: (() -> Unit)? = null
 
-    private val imageLoader: ExecutorService = Executors.newSingleThreadExecutor { r ->
+    // A `var`, not a `val`: show() calls destroy() on this same instance (not
+    // a fresh one) whenever useDynamicIsland changes, which shuts this down.
+    // loadIcon() rebuilds it on demand so a later custom-icon toast on the
+    // same overlay doesn't hit a RejectedExecutionException on a dead pool.
+    private var imageLoader: ExecutorService = newImageLoader()
+
+    private fun newImageLoader(): ExecutorService = Executors.newSingleThreadExecutor { r ->
         Thread(r, "ToastIconLoader").apply { isDaemon = true }
     }
     // Bitmaps keyed by URI so a repeat show of the same custom icon paints
@@ -379,6 +385,9 @@ class ToastOverlay(activity: Activity) {
     private fun loadIcon(built: ToastViewFactory.Built, uri: String) {
         val targetW = built.icon.layoutParams.width.takeIf { it > 0 } ?: DEFAULT_ICON_TARGET_PX
         val targetH = built.icon.layoutParams.height.takeIf { it > 0 } ?: DEFAULT_ICON_TARGET_PX
+        if (imageLoader.isShutdown) {
+            imageLoader = newImageLoader()
+        }
         imageLoader.execute {
             val bitmap = try {
                 when {
