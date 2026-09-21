@@ -84,11 +84,18 @@ import UIKit
             self.cancelTimer()
             if autoDismiss && duration > 0 {
                 let interval = TimeInterval(duration) / 1000.0
-                self.autoDismissTimer = Timer.scheduledTimer(withTimeInterval: interval, repeats: false) { [weak self] _ in
+                // `.common` mode, like the backdrop sampler below: `.default`-mode
+                // timers are suspended for as long as the run loop is in `.tracking`
+                // mode, which UIKit enters for any active touch/scroll — so a toast
+                // triggered while (or dismissed while) the user is scrolling would
+                // never time out, jamming every later toast behind it in the queue.
+                let timer = Timer(timeInterval: interval, repeats: false) { [weak self] _ in
                     DispatchQueue.main.async {
                         self?.dismiss()
                     }
                 }
+                RunLoop.main.add(timer, forMode: .common)
+                self.autoDismissTimer = timer
             }
 
             if !accessibilityAnnouncement.isEmpty {
@@ -148,11 +155,15 @@ import UIKit
         cancelTimer()
         if autoDismiss && duration > 0 {
             let interval = TimeInterval(duration) / 1000.0
-            autoDismissTimer = Timer.scheduledTimer(withTimeInterval: interval, repeats: false) { [weak self] _ in
+            // See the matching comment in show(): `.common` mode so scrolling
+            // doesn't suspend the countdown.
+            let timer = Timer(timeInterval: interval, repeats: false) { [weak self] _ in
                 DispatchQueue.main.async {
                     self?.dismiss()
                 }
             }
+            RunLoop.main.add(timer, forMode: .common)
+            autoDismissTimer = timer
         }
     }
 

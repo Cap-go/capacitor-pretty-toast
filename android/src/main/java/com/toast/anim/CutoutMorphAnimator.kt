@@ -29,6 +29,17 @@ class CutoutMorphAnimator(
     private val cornerRadiiBuf = FloatArray(8)
 
     /**
+     * Set for the duration of dismiss()'s own pill.animate() run. A tap or
+     * release arriving in that window would otherwise reach snapBack(),
+     * which cancels the very same ViewPropertyAnimator instance (Android
+     * caches one per view) — cancel() never runs withEndAction, so the
+     * dismiss's own state reset and onEnd() callback would be lost forever,
+     * leaving the toast overlay's isDismissing flag stuck and every later
+     * toast permanently queued behind it.
+     */
+    private var isDismissingAnim = false
+
+    /**
      * Lower bound for the measured pill height — guards against racing
      * the layout pass, where `pill.height` can briefly read as 0.
      */
@@ -76,6 +87,7 @@ class CutoutMorphAnimator(
     }
 
     override fun dismiss(onEnd: () -> Unit) {
+        isDismissingAnim = true
         onBeforeDismiss()
 
         val expandedWidth = pill.width.toFloat().coerceAtLeast(1f)
@@ -110,6 +122,7 @@ class CutoutMorphAnimator(
             .setDuration(MORPH_DURATION_MS)
             .setInterpolator(MORPH_EASING)
             .withEndAction {
+                isDismissingAnim = false
                 resetPillToExpandedResting()
                 onEnd()
             }
@@ -123,6 +136,11 @@ class CutoutMorphAnimator(
     }
 
     override fun snapBack() {
+        // A dismiss already in flight owns this animator; cancelling it here
+        // would strand it (see isDismissingAnim above) instead of letting it
+        // finish and report back to ToastOverlay.
+        if (isDismissingAnim) return
+
         // Release-without-dismiss during a morph drag: spring back to full
         // size and restore content opacity.
         pill.animate().cancel()
