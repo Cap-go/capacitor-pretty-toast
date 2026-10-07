@@ -1,13 +1,28 @@
 # @capgo/capacitor-pretty-toast
 
-Native-first pretty toast notifications for Capacitor and the web.
+Show beautiful toast notifications in your Capacitor app with native overlays on iOS and Android and a DOM renderer on web. Same `toast.*` API as react-native-pretty-toast.
 
-## Demo
+<a href="https://capgo.app/?ref=plugin_pretty_toast"><img src="https://capgo.app/readme-banner.svg?repo=Cap-go/capacitor-pretty-toast" alt="Capgo - Instant updates for Capacitor" /></a>
 
-<img
-  src="./media/pretty-toast-external-device.webp"
-  alt="Animated Pretty Toast demo on an external device"
-/>
+<div align="center">
+  <p><b>Capgo</b>: open-source live updates for Ionic and Capacitor apps. Ship OTA fixes and features instantly, without waiting for app store review.</p>
+  <h2><a href="https://capgo.app/register/?ref=plugin_pretty_toast">➡️ Get started for free</a></h2>
+  <p>14-day unlimited free trial. No credit card required</p>
+  <p><a href="https://capgo.app/consulting/?ref=plugin_pretty_toast">Missing a feature? We'll build the plugin for you 💪</a></p>
+</div>
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/Cap-go/capacitor-pretty-toast/main/.github/assets/readme-demo.webp" alt="Animated Pretty Toast demo on an external device" width="300" />
+</p>
+
+## Key features
+
+- **Variants**: `success()`, `error()`, `info()`, `warning()`, `loading()` and fully custom `show()`.
+- **Promise toasts**: `promise()` shows loading, then success or error when your promise settles.
+- **Live updates**: `update()` changes a toast in place, `dismiss()` and `dismissAll()` close them.
+- **Queueing**: toasts queue by default, and `force` shows one right away.
+- **Icons**: symbol icons, raw SVG and image URIs through `iconSource`.
+- **Platforms**: iOS, Android and Web.
 
 This package keeps the familiar `toast.*` surface from `react-native-pretty-toast`, but ships as a Capacitor plugin with:
 
