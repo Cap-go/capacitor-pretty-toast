@@ -20,8 +20,8 @@ Show beautiful toast notifications in your Capacitor app with native overlays on
 - **Variants**: `success()`, `error()`, `info()`, `warning()`, `loading()` and fully custom `show()`.
 - **Promise toasts**: `promise()` shows loading, then success or error when your promise settles.
 - **Live updates**: `update()` changes a toast in place, `dismiss()` and `dismissAll()` close them.
-- **Queueing**: toasts queue by default, and `force` shows one right away.
-- **Icons**: symbol icons, raw SVG and image URIs through `iconSource`.
+- **Queueing**: toasts queue by default, and `force` puts the new toast first and shows it once the current toast is dismissed.
+- **Icons**: symbol icons and raw SVG through `icon`, and image URIs through `iconSource`.
 - **Platforms**: iOS, Android and Web.
 
 This package keeps the familiar `toast.*` surface from `react-native-pretty-toast`, but ships as a Capacitor plugin with:
