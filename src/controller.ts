@@ -227,8 +227,10 @@ export class ToastController {
   }
 
   private handlePress(id: string): void {
-    if (!this.current || this.current.id !== id || !this.current.onPress) return;
-    this.current.onPress();
+    if (!this.current || this.current.id !== id) return;
+    // A tap always dismisses the toast; `onPress` is optional. Without this, native taps on a
+    // toast that has no `onPress` were dropped and the pill could only leave by timer or swipe.
+    this.current.onPress?.();
     this.clearAutoDismissTimer();
     this.autoDismissed = false;
     void this.driver.dismiss(id);

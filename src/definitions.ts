@@ -69,7 +69,7 @@ export interface ToastConfig {
    */
   accessibilityAnnouncement?: string;
   /**
-   * Called when the toast body is pressed.
+   * Called when the toast body is pressed. Tapping the toast always dismisses it.
    */
   onPress?: () => void;
   /**
