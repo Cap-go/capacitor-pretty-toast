@@ -130,4 +130,21 @@ describe('ToastController', () => {
 
     expect(events).toEqual(['auto', 'hide']);
   });
+  test('a tap dismisses a toast even without onPress', () => {
+    const driver = new FakeDriver();
+    const controller = new ToastController(driver);
+    const id = controller.ref.info('Blank notebook');
+    driver.events?.onPress({ id });
+    expect(driver.dismissCalls).toEqual([id]);
+  });
+
+  test('a tap calls onPress then dismisses', () => {
+    const driver = new FakeDriver();
+    const controller = new ToastController(driver);
+    let pressed = 0;
+    const id = controller.ref.show({ title: 'Open', onPress: () => pressed++ });
+    driver.events?.onPress({ id });
+    expect(pressed).toBe(1);
+    expect(driver.dismissCalls).toEqual([id]);
+  });
 });
