@@ -6,7 +6,7 @@ import UIKit
 // native entrypoints are wider than SwiftLint's default preference.
 // swiftlint:disable function_parameter_count
 @objc public class ToastManager: NSObject {
-    private var overlayWindow: PassThroughWindow?
+    fileprivate var overlayWindow: PassThroughWindow?
     private var hostingController: CustomHostingView?
     private var autoDismissTimer: Timer?
     private var dismissCancellable: AnyCancellable?
@@ -20,6 +20,7 @@ import UIKit
     // cancellable so a queued toast keeps it hidden across the handoff.
     private var statusBarRestoreWorkItem: DispatchWorkItem?
     private var imageLoadTask: URLSessionDataTask?
+    fileprivate var foregroundObserver: NSObjectProtocol?
 
     @objc public var onDismiss: (() -> Void)?
     @objc public var onPress: (() -> Void)?
@@ -73,6 +74,7 @@ import UIKit
 
         let present = { [weak self] in
             guard let self, let overlayWindow = self.overlayWindow else { return }
+            overlayWindow.isHidden = false
             overlayWindow.isPresented = true
             if !disableBackdropSampling {
                 overlayWindow.startBackdropSampling()
@@ -180,6 +182,7 @@ import UIKit
         scheduleStatusBarRestore()
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) { [weak self] in
+            self?.hideOverlayIfIdle()
             self?.onDismiss?()
         }
     }
@@ -212,6 +215,7 @@ import UIKit
         }
 
         observeDismiss()
+        observeForeground()
         observeSwipeDismiss()
         observeTap()
         observeAction()
@@ -232,6 +236,7 @@ import UIKit
                 self.scheduleStatusBarRestore()
 
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) { [weak self] in
+                    self?.hideOverlayIfIdle()
                     self?.onDismiss?()
                 }
             }
@@ -384,6 +389,9 @@ import UIKit
         let timer = autoDismissTimer
         let workItem = statusBarRestoreWorkItem
         let loadTask = imageLoadTask
+        if let foregroundObserver {
+            NotificationCenter.default.removeObserver(foregroundObserver)
+        }
         DispatchQueue.main.async {
             timer?.invalidate()
             workItem?.cancel()
@@ -419,3 +427,27 @@ import UIKit
     }
 }
 // swiftlint:enable function_parameter_count
+
+extension ToastManager {
+    // A toast dismissed while the app is in the background (its timer still
+    // fires when the app keeps running, e.g. a workout or a live activity)
+    // flips `isPresented` without SwiftUI ever rendering the collapse, so the
+    // expanded pill stays drawn on return. `point(inside:)` already passes
+    // touches through once `isPresented` is false, which left that ghost pill
+    // impossible to tap or swipe away. Hiding the idle window removes it.
+    fileprivate func observeForeground() {
+        guard foregroundObserver == nil else { return }
+        foregroundObserver = NotificationCenter.default.addObserver(
+            forName: UIApplication.didBecomeActiveNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.hideOverlayIfIdle()
+        }
+    }
+
+    fileprivate func hideOverlayIfIdle() {
+        guard let overlayWindow, !overlayWindow.isPresented else { return }
+        overlayWindow.isHidden = true
+    }
+}
