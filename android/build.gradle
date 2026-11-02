@@ -65,7 +65,7 @@ repositories {
 dependencies {
     implementation project(':capacitor-android')
     implementation "androidx.appcompat:appcompat:$androidxAppCompatVersion"
-    implementation "androidx.dynamicanimation:dynamicanimation:1.0.0"
+    implementation "androidx.dynamicanimation:dynamicanimation:1.1.0"
 
     testImplementation "junit:junit:$junitVersion"
     testImplementation "org.mockito:mockito-core:$mockitoVersion"
