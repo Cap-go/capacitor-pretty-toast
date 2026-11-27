@@ -13,7 +13,6 @@
     "dist/",
     "ios/Sources",
     "ios/Tests",
-    "scripts/",
     "Package.swift",
     "CapgoCapacitorPrettyToast.podspec"
   ],
